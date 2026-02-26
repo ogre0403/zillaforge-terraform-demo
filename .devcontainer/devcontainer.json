@@ -1,0 +1,18 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.205.2/containers/alpine
+{
+	"name": "golang",
+  	"image": "Zillaforge/terraform:0.0.1-alpha",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"golang.Go",
+				"GitHub.copilot-chat",
+				"isudox.vscode-jetbrains-keybindings",
+				"Arjun.swagger-viewer",
+				"humao.rest-client",
+				"pjmiravalle.terraform-advanced-syntax-highlighting"
+			]
+		}
+	}
+}

@@ -1,0 +1,14 @@
+terraform {
+  required_providers {
+    zillaforge = {
+      source  = "hashicorp/zillaforge"
+      version = "0.0.1-alpha"
+    }
+  }
+}
+
+provider "zillaforge" {
+  api_endpoint     = var.api_endpoint
+  api_key          = var.api_key
+  project_sys_code = var.project_sys_code
+}
