@@ -57,6 +57,8 @@ resource "zillaforge_server" "ubuntu_2404" {
   image_id  = data.zillaforge_images.ubuntu_2404.images[0].id
   keypair   = data.zillaforge_keypairs.selected.keypairs[0].id
 
+  user_data = "apt update; apt install -y nginx"
+
   network_attachment {
     network_id         = data.zillaforge_networks.default.networks[0].id
     primary            = true
@@ -65,6 +67,17 @@ resource "zillaforge_server" "ubuntu_2404" {
   }
 
   wait_for_active = true
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Waiting for HTTP 200 from ${self.network_attachment[0].floating_ip} ..."
+      until [ "$(curl -s -o /dev/null -w '%%{http_code}' http://${self.network_attachment[0].floating_ip})" = "200" ]; do
+        echo "Not ready yet, retrying in 10 seconds..."
+        sleep 10
+      done
+      echo "Service is up and returned HTTP 200!"
+    EOT
+  }
 }
 
 # ---------------------------------------------------------------------------
