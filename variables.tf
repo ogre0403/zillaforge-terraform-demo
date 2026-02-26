@@ -15,3 +15,15 @@ variable "project_sys_code" {
   type        = string
   default     = ""
 }
+
+variable "keypair_name" {
+  description = "Name of the SSH keypair to inject into the server"
+  type        = string
+  default     = ""
+}
+
+variable "sg_name" {
+  description = "Name of the security group to attach to the server"
+  type        = string
+  default     = ""
+}
