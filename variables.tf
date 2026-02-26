@@ -27,3 +27,9 @@ variable "sg_name" {
   type        = string
   default     = ""
 }
+
+variable "total" {
+  description = "Number of VMs to create"
+  type        = number
+  default     = 1
+}

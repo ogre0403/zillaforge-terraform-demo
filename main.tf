@@ -4,6 +4,10 @@ terraform {
       source  = "hashicorp/zillaforge"
       version = "0.0.1-alpha"
     }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.0"
+    }
   }
 }
 
@@ -43,8 +47,9 @@ data "zillaforge_keypairs" "selected" {
 # ---------------------------------------------------------------------------
 
 resource "zillaforge_floating_ip" "vm_fip" {
-  name        = "ubuntu-2404-fip"
-  description = "Floating IP for Ubuntu 24.04 VM"
+  count       = var.total
+  name        = "ubuntu-2404-fip-${count.index}"
+  description = "Floating IP for Ubuntu 24.04 VM ${count.index}"
 }
 
 # ---------------------------------------------------------------------------
@@ -52,7 +57,8 @@ resource "zillaforge_floating_ip" "vm_fip" {
 # ---------------------------------------------------------------------------
 
 resource "zillaforge_server" "ubuntu_2404" {
-  name      = "ubuntu-2404-vm"
+  count     = var.total
+  name      = "ubuntu-2404-vm-${count.index}"
   flavor_id = data.zillaforge_flavors.basic_small.flavors[0].id
   image_id  = data.zillaforge_images.ubuntu_2404.images[0].id
   keypair   = data.zillaforge_keypairs.selected.keypairs[0].id
@@ -63,35 +69,46 @@ resource "zillaforge_server" "ubuntu_2404" {
     network_id         = data.zillaforge_networks.default.networks[0].id
     primary            = true
     security_group_ids = [data.zillaforge_security_groups.selected.security_groups[0].id]
-    floating_ip_id     = zillaforge_floating_ip.vm_fip.id
+    floating_ip_id     = zillaforge_floating_ip.vm_fip[count.index].id
   }
 
   wait_for_active = true
+}
+
+resource "null_resource" "wait_for_all_vms" {
+  triggers = {
+    floating_ips = join(",", zillaforge_server.ubuntu_2404[*].network_attachment[0].floating_ip)
+  }
 
   provisioner "local-exec" {
     command = <<-EOT
-      echo "Waiting for HTTP 200 from ${self.network_attachment[0].floating_ip} ..."
-      until [ "$(curl -s -o /dev/null -w '%%{http_code}' http://${self.network_attachment[0].floating_ip})" = "200" ]; do
-        echo "Not ready yet, retrying in 10 seconds..."
-        sleep 10
+      for ip in ${join(" ", zillaforge_server.ubuntu_2404[*].network_attachment[0].floating_ip)}; do
+        echo "Waiting for HTTP 200 from $ip ..."
+        until [ "$(curl -s -o /dev/null -w '%%{http_code}' http://$ip)" = "200" ]; do
+          echo "$ip not ready yet, retrying in 10 seconds..."
+          sleep 10
+        done
+        echo "$ip is up and returned HTTP 200!"
       done
-      echo "Service is up and returned HTTP 200!"
+      echo "All VMs are ready!"
     EOT
   }
+
+  depends_on = [zillaforge_server.ubuntu_2404]
 }
 
 # ---------------------------------------------------------------------------
 # Outputs
 # ---------------------------------------------------------------------------
 
-output "server_id" {
-  value = zillaforge_server.ubuntu_2404.id
+output "server_ids" {
+  value = zillaforge_server.ubuntu_2404[*].id
 }
 
-output "server_private_ip" {
-  value = zillaforge_server.ubuntu_2404.ip_addresses
+output "server_private_ips" {
+  value = zillaforge_server.ubuntu_2404[*].ip_addresses
 }
 
-output "server_floating_ip" {
-  value = zillaforge_server.ubuntu_2404.network_attachment[0].floating_ip
+output "server_floating_ips" {
+  value = zillaforge_server.ubuntu_2404[*].network_attachment[0].floating_ip
 }
