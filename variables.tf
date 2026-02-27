@@ -33,3 +33,27 @@ variable "total" {
   type        = number
   default     = 1
 }
+
+variable "image_repository" {
+  description = "Image repository to use for the server (e.g. ubuntu)"
+  type        = string
+  default     = ""
+}
+
+variable "image_tag" {
+  description = "Image tag to use for the server (e.g. 2404)"
+  type        = string
+  default     = ""
+}
+
+variable "flavor_name" {
+  description = "Flavor name to use for the server (e.g. Basic.small)"
+  type        = string
+  default     = ""
+}
+
+variable "network_name" {
+  description = "Network name to attach the server to (e.g. default)"
+  type        = string
+  default     = ""
+}

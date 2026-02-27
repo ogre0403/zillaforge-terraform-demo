@@ -22,16 +22,16 @@ provider "zillaforge" {
 # ---------------------------------------------------------------------------
 
 data "zillaforge_images" "ubuntu_2404" {
-  repository = "ubuntu"
-  tag        = "2404"
+  repository = var.image_repository
+  tag        = var.image_tag
 }
 
 data "zillaforge_flavors" "basic_small" {
-  name = "Basic.small"
+  name = var.flavor_name
 }
 
 data "zillaforge_networks" "default" {
-  name = "default"
+  name = var.network_name
 }
 
 data "zillaforge_security_groups" "selected" {
