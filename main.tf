@@ -22,24 +22,24 @@ provider "zillaforge" {
 # ---------------------------------------------------------------------------
 
 data "zillaforge_images" "ubuntu_2404" {
-  repository = var.image_repository
-  tag        = var.image_tag
+  repository = var.image_repository != "" ? var.image_repository : null
+  tag        = var.image_tag != "" ? var.image_tag : null
 }
 
 data "zillaforge_flavors" "basic_small" {
-  name = var.flavor_name
+  name = var.flavor_name != "" ? var.flavor_name : null
 }
 
 data "zillaforge_networks" "default" {
-  name = var.network_name
+  name = var.network_name != "" ? var.network_name : null
 }
 
 data "zillaforge_security_groups" "selected" {
-  name = var.sg_name
+  name = var.sg_name != "" ? var.sg_name : null
 }
 
 data "zillaforge_keypairs" "selected" {
-  name = var.keypair_name
+  name = var.keypair_name != "" ? var.keypair_name : null
 }
 
 # ---------------------------------------------------------------------------
@@ -101,14 +101,35 @@ resource "null_resource" "wait_for_all_vms" {
 # Outputs
 # ---------------------------------------------------------------------------
 
-output "server_ids" {
-  value = zillaforge_server.ubuntu_2404[*].id
-}
-
 output "server_private_ips" {
-  value = zillaforge_server.ubuntu_2404[*].ip_addresses
+  value = join(", ", flatten(zillaforge_server.ubuntu_2404[*].ip_addresses))
 }
 
 output "server_floating_ips" {
-  value = zillaforge_server.ubuntu_2404[*].network_attachment[0].floating_ip
+  value = join(", ", zillaforge_server.ubuntu_2404[*].network_attachment[0].floating_ip)
+}
+
+output "used_image" {
+  description = "Image used by the servers (repository_name:tag_name)"
+  value       = "${data.zillaforge_images.ubuntu_2404.images[0].repository_name}:${data.zillaforge_images.ubuntu_2404.images[0].tag_name}"
+}
+
+output "used_flavor" {
+  description = "Flavor used by the servers (name, vCPUs, memory MB, disk GB)"
+  value       = "${data.zillaforge_flavors.basic_small.flavors[0].name} (${data.zillaforge_flavors.basic_small.flavors[0].vcpus} vCPU, ${data.zillaforge_flavors.basic_small.flavors[0].memory} MB RAM, ${data.zillaforge_flavors.basic_small.flavors[0].disk} GB disk)"
+}
+
+output "used_network" {
+  description = "Network attached to the servers"
+  value       = "${data.zillaforge_networks.default.networks[0].name} (${data.zillaforge_networks.default.networks[0].cidr})"
+}
+
+output "used_security_group" {
+  description = "Security group applied to the servers"
+  value       = data.zillaforge_security_groups.selected.security_groups[0].name
+}
+
+output "used_keypair" {
+  description = "SSH keypair injected into the servers"
+  value       = data.zillaforge_keypairs.selected.keypairs[0].name
 }
