@@ -112,12 +112,12 @@ resource "null_resource" "wait_for_all_vms" {
 # Outputs
 # ---------------------------------------------------------------------------
 
-output "server_private_ips" {
-  value = join(", ", flatten(zillaforge_server.terraform_server[*].ip_addresses))
-}
-
-output "server_floating_ips" {
-  value = join(", ", zillaforge_server.terraform_server[*].network_attachment[0].floating_ip)
+output "server_info" {
+  description = "Array of objects with server name and its floating IP"
+  value = [for s in zillaforge_server.terraform_server : {
+    name        = s.name
+    floating_ip = s.network_attachment[0].floating_ip
+  }]
 }
 
 output "used_image" {
