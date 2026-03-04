@@ -43,12 +43,23 @@ data "zillaforge_keypairs" "selected" {
 }
 
 # ---------------------------------------------------------------------------
+# Locals
+# ---------------------------------------------------------------------------
+
+locals {
+  image_base_raw = data.zillaforge_images.selected.images[0].repository_name
+  image_tag_raw  = data.zillaforge_images.selected.images[0].tag_name
+
+  name_base = "${local.image_base_raw}-${local.image_tag_raw}"
+}
+
+# ---------------------------------------------------------------------------
 # Floating IP
 # ---------------------------------------------------------------------------
 
 resource "zillaforge_floating_ip" "vm_fip" {
   count       = var.total
-  name        = "ubuntu-2404-fip-${count.index}"
+  name        = "${local.name_base}-fip-${count.index}"
   description = "Floating IP for Ubuntu 24.04 VM ${count.index}"
 }
 
@@ -56,9 +67,9 @@ resource "zillaforge_floating_ip" "vm_fip" {
 # Server
 # ---------------------------------------------------------------------------
 
-resource "zillaforge_server" "ubuntu_2404" {
+resource "zillaforge_server" "terraform_server" {
   count     = var.total
-  name      = "ubuntu-2404-vm-${count.index}"
+  name      = "${local.name_base}-vm-${count.index}"
   flavor_id = data.zillaforge_flavors.selected.flavors[0].id
   image_id  = data.zillaforge_images.selected.images[0].id
   keypair   = data.zillaforge_keypairs.selected.keypairs[0].id
@@ -77,12 +88,12 @@ resource "zillaforge_server" "ubuntu_2404" {
 
 resource "null_resource" "wait_for_all_vms" {
   triggers = {
-    floating_ips = join(",", zillaforge_server.ubuntu_2404[*].network_attachment[0].floating_ip)
+    floating_ips = join(",", zillaforge_server.terraform_server[*].network_attachment[0].floating_ip)
   }
 
   provisioner "local-exec" {
     command = <<-EOT
-      for ip in ${join(" ", zillaforge_server.ubuntu_2404[*].network_attachment[0].floating_ip)}; do
+      for ip in ${join(" ", zillaforge_server.terraform_server[*].network_attachment[0].floating_ip)}; do
         echo "Waiting for HTTP 200 from $ip ..."
         until [ "$(curl -s -o /dev/null -w '%%{http_code}' http://$ip)" = "200" ]; do
           echo "$ip not ready yet, retrying in 10 seconds..."
@@ -94,7 +105,7 @@ resource "null_resource" "wait_for_all_vms" {
     EOT
   }
 
-  depends_on = [zillaforge_server.ubuntu_2404]
+  depends_on = [zillaforge_server.terraform_server]
 }
 
 # ---------------------------------------------------------------------------
@@ -102,11 +113,11 @@ resource "null_resource" "wait_for_all_vms" {
 # ---------------------------------------------------------------------------
 
 output "server_private_ips" {
-  value = join(", ", flatten(zillaforge_server.ubuntu_2404[*].ip_addresses))
+  value = join(", ", flatten(zillaforge_server.terraform_server[*].ip_addresses))
 }
 
 output "server_floating_ips" {
-  value = join(", ", zillaforge_server.ubuntu_2404[*].network_attachment[0].floating_ip)
+  value = join(", ", zillaforge_server.terraform_server[*].network_attachment[0].floating_ip)
 }
 
 output "used_image" {
