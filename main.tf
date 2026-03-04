@@ -21,16 +21,16 @@ provider "zillaforge" {
 # Data Sources
 # ---------------------------------------------------------------------------
 
-data "zillaforge_images" "ubuntu_2404" {
+data "zillaforge_images" "selected" {
   repository = var.image_repository != "" ? var.image_repository : null
   tag        = var.image_tag != "" ? var.image_tag : null
 }
 
-data "zillaforge_flavors" "basic_small" {
+data "zillaforge_flavors" "selected" {
   name = var.flavor_name != "" ? var.flavor_name : null
 }
 
-data "zillaforge_networks" "default" {
+data "zillaforge_networks" "selected" {
   name = var.network_name != "" ? var.network_name : null
 }
 
@@ -59,14 +59,14 @@ resource "zillaforge_floating_ip" "vm_fip" {
 resource "zillaforge_server" "ubuntu_2404" {
   count     = var.total
   name      = "ubuntu-2404-vm-${count.index}"
-  flavor_id = data.zillaforge_flavors.basic_small.flavors[0].id
-  image_id  = data.zillaforge_images.ubuntu_2404.images[0].id
+  flavor_id = data.zillaforge_flavors.selected.flavors[0].id
+  image_id  = data.zillaforge_images.selected.images[0].id
   keypair   = data.zillaforge_keypairs.selected.keypairs[0].id
 
   user_data = "apt update; apt install -y nginx"
 
   network_attachment {
-    network_id         = data.zillaforge_networks.default.networks[0].id
+    network_id         = data.zillaforge_networks.selected.networks[0].id
     primary            = true
     security_group_ids = [data.zillaforge_security_groups.selected.security_groups[0].id]
     floating_ip_id     = zillaforge_floating_ip.vm_fip[count.index].id
@@ -111,17 +111,17 @@ output "server_floating_ips" {
 
 output "used_image" {
   description = "Image used by the servers (repository_name:tag_name)"
-  value       = "${data.zillaforge_images.ubuntu_2404.images[0].repository_name}:${data.zillaforge_images.ubuntu_2404.images[0].tag_name}"
+  value       = "${data.zillaforge_images.selected.images[0].repository_name}:${data.zillaforge_images.selected.images[0].tag_name}"
 }
 
 output "used_flavor" {
   description = "Flavor used by the servers (name, vCPUs, memory MB, disk GB)"
-  value       = "${data.zillaforge_flavors.basic_small.flavors[0].name} (${data.zillaforge_flavors.basic_small.flavors[0].vcpus} vCPU, ${data.zillaforge_flavors.basic_small.flavors[0].memory} MB RAM, ${data.zillaforge_flavors.basic_small.flavors[0].disk} GB disk)"
+  value       = "${data.zillaforge_flavors.selected.flavors[0].name} (${data.zillaforge_flavors.selected.flavors[0].vcpus} vCPU, ${data.zillaforge_flavors.selected.flavors[0].memory} MB RAM, ${data.zillaforge_flavors.selected.flavors[0].disk} GB disk)"
 }
 
 output "used_network" {
   description = "Network attached to the servers"
-  value       = "${data.zillaforge_networks.default.networks[0].name} (${data.zillaforge_networks.default.networks[0].cidr})"
+  value       = "${data.zillaforge_networks.selected.networks[0].name} (${data.zillaforge_networks.selected.networks[0].cidr})"
 }
 
 output "used_security_group" {
