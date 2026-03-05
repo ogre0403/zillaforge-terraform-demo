@@ -135,9 +135,22 @@ output "used_network" {
   value       = "${data.zillaforge_networks.selected.networks[0].name} (${data.zillaforge_networks.selected.networks[0].cidr})"
 }
 
-output "used_security_group" {
-  description = "Security group applied to the servers"
-  value       = data.zillaforge_security_groups.selected.security_groups[0].name
+output "used_security_group_info" {
+  description = "Security group applied to the servers (name, ingress and egress rules)"
+  value = {
+    name    = data.zillaforge_security_groups.selected.security_groups[0].name
+    allow_from = [for r in try(data.zillaforge_security_groups.selected.security_groups[0].ingress_rule, []) : {
+      port       = r.port_range
+      protocol   = r.protocol
+      cidr = r.source_cidr
+    }]
+
+    allow_to = [for r in try(data.zillaforge_security_groups.selected.security_groups[0].egress_rule, []) : {
+      port     = r.port_range
+      protocol = r.protocol
+      cidr     = r.destination_cidr
+    }]
+  }
 }
 
 output "used_keypair" {
