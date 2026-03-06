@@ -138,11 +138,11 @@ output "used_network" {
 output "used_security_group_info" {
   description = "Security group applied to the servers (name, ingress and egress rules)"
   value = {
-    name    = data.zillaforge_security_groups.selected.security_groups[0].name
+    name = data.zillaforge_security_groups.selected.security_groups[0].name
     allow_from = [for r in try(data.zillaforge_security_groups.selected.security_groups[0].ingress_rule, []) : {
-      port       = r.port_range
-      protocol   = r.protocol
-      cidr = r.source_cidr
+      port     = r.port_range
+      protocol = r.protocol
+      cidr     = r.source_cidr
     }]
 
     allow_to = [for r in try(data.zillaforge_security_groups.selected.security_groups[0].egress_rule, []) : {
